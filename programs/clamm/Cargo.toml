@@ -1,0 +1,27 @@
+[package]
+name = "clamm"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "clamm"
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.26"
+anchor-spl = "0.26"
+spl-token = { version = "3.3.0", features = ["no-entrypoint"] }
+thiserror = "1.0"
+uint = {version = "0.9.1", default-features = false}
+borsh = "0.9.3"
+anchor-derive-accounts = "0.29.0"
+borsh-derive = "0.9.3"
+spl-associated-token-account = { version = "1.0.3", features = ["no-entrypoint"] }
+solana-program = "=1.17.0"
