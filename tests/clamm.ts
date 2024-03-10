@@ -23,11 +23,14 @@ describe("clamm", () => {
   let tokenB: anchor.web3.PublicKey;
   let alice: anchor.web3.Keypair;
   let aliceTokenAWallet: anchor.web3.PublicKey;
+  let aliceTokenBWallet: anchor.web3.PublicKey;
 
   beforeEach(async () => {
      tokenA = await tokenUtils.createMint(provider.connection);
      tokenB = await tokenUtils.createMint(provider.connection);
     [alice, aliceTokenAWallet] = await tokenUtils.createUserAndAssociatedWallet(provider.connection, tokenA);
+    aliceTokenBWallet = await tokenUtils.createAssociatedWallet(provider.connection, alice.publicKey, tokenB);
+
   });
 
   it("Creates pool!", async () => {
@@ -45,8 +48,8 @@ describe("clamm", () => {
       .accounts({funder: alice.publicKey, config: whirlpoolsConfigKeypair.publicKey})
       .signers([alice, whirlpoolsConfigKeypair])
       .rpc();
-
-      console.log("creating pool [PART 2]")
+    await delay(1000);
+    console.log("creating pool [PART 2]")
     await program.methods
       .initializePool(tick_spacing,initial_sqrt_price)
       .accounts({
@@ -61,55 +64,61 @@ describe("clamm", () => {
       })
       .signers([alice])
       .rpc();
-    
-  const [ticketArrayPDA, ] = await PublicKey.findProgramAddress([
-    anchor.utils.bytes.utf8.encode('tick_array'),
-    poolPDA.toBuffer()
-  ],program.programId)
-  console.log("creating Init Tick Array [PART 3]")
+    await delay(1000);
+      
+    const [ticketArrayPDA, ] = await PublicKey.findProgramAddress([
+      anchor.utils.bytes.utf8.encode('tick_array'),
+      poolPDA.toBuffer()
+    ],program.programId)
+    console.log("creating Init Tick Array [PART 3]")
 
-  // 2. Init Tick Array
-  await program.methods
-    .initializeTickArray(start_tick_idx)
-    .accounts({
-      pool: poolPDA,
-      funder: alice.publicKey,
-      tickArray: ticketArrayPDA
-    })
-    .signers([alice])
-    .rpc();
+    // 2. Init Tick Array
+    await program.methods
+      .initializeTickArray(start_tick_idx)
+      .accounts({
+        pool: poolPDA,
+        funder: alice.publicKey,
+        tickArray: ticketArrayPDA
+      })
+      .signers([alice])
+      .rpc();
 
-  const [positionPDA, ] = await PublicKey.findProgramAddress([
-    anchor.utils.bytes.utf8.encode('position'),
-  ],program.programId)
-  
-  console.log("creating open position [PART 4]")
-  // 3. Open position
-  await program.methods
-    .openPosition(start_tick_idx, end_tick_idx)
-    .accounts({
-      position: positionPDA,
-      funder: alice.publicKey,
-      owner: alice.publicKey,
-      pool: poolPDA
-    })
-    .signers([alice])
-    .rpc();
-
+    const [positionPDA, ] = await PublicKey.findProgramAddress([
+      anchor.utils.bytes.utf8.encode('position'),
+    ],program.programId)
+    await delay(1000);
+    console.log("creating open position [PART 4]")
+    // 3. Open position
+    await program.methods
+      .openPosition(start_tick_idx, end_tick_idx)
+      .accounts({
+        position: positionPDA,
+        funder: alice.publicKey,
+        owner: alice.publicKey,
+        pool: poolPDA
+      })
+      .signers([alice])
+      .rpc();
+      await delay(1000);
     // 4. Increase liquidity
-  // await program.methods
-  //   .addLiquidity(token_amount, token_max_a, token_max_b)
-  //   .accounts({
-  //    pool: poolPDA,
-  //    position_authority:
-  //    position:
-  //    token_owner_account_a:
-  //    token_owner_account_b:
-  //    token_vault_a:
-  //    token_vault_b:
-  //    tick_array_lower:
-  //    tick_array_upper:
-  //   })
-  //   .signers([alice])
-  //   .rpc();
+    // await program.methods
+    //   .addLiquidity(token_amount, token_max_a, token_max_b)
+    //   .accounts({
+    //     pool: poolPDA,
+    //     position_authority: alice.publicKey,
+    //     position: positionPDA,
+    //     token_owner_account_a: tokenA,
+    //     token_owner_account_b: tokenB,
+    //     token_vault_a: poolWalletTokenAPDA,
+    //     token_vault_b: poolWalletTokenBPDA,
+    //     tick_array_lower: 
+    //     tick_array_upper:
+    //   })
+    //   .signers([alice])
+    //   .rpc();
+  })
 });
+
+function delay(ms: number) {
+  return new Promise( resolve => setTimeout(resolve, ms) );
+}
