@@ -54,36 +54,26 @@ export const createUserAndAssociatedWallet = async (connection: anchor.web3.Conn
     return [user, userAssociatedTokenAccount];
   }
 
-  export const createAssociatedWallet = async (connection: anchor.web3.Connection, user: anchor.web3.PublicKey, mint?: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
+  export const createAssociatedWallet = async (connection: anchor.web3.Connection, user: anchor.web3.Keypair, mint?: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
     let userAssociatedTokenAccount: anchor.web3.PublicKey | undefined = undefined;
 
     // Fund user with some SOL
-    let txFund = new anchor.web3.Transaction();
-    txFund.add(anchor.web3.SystemProgram.transfer({
-        fromPubkey: provider.wallet.publicKey,
-        toPubkey: user,
-        lamports: 5 * anchor.web3.LAMPORTS_PER_SOL,
-    }));
-    const sigTxFund = await provider.sendAndConfirm(txFund);
-    console.log(`[${user.toBase58()}] Funded new account with 5 SOL: ${sigTxFund}`);
-
     if (mint) {
         // Create a token account for the user and mint some tokens
         userAssociatedTokenAccount = await spl.Token.getAssociatedTokenAddress(
             spl.ASSOCIATED_TOKEN_PROGRAM_ID,
             spl.TOKEN_PROGRAM_ID,
             mint,
-            user
+            user.publicKey
         )
-
         const txFundTokenAccount = new anchor.web3.Transaction();
         txFundTokenAccount.add(spl.Token.createAssociatedTokenAccountInstruction(
             spl.ASSOCIATED_TOKEN_PROGRAM_ID,
             spl.TOKEN_PROGRAM_ID,
             mint,
             userAssociatedTokenAccount,
-            user,
-            user,
+            user.publicKey,
+            user.publicKey,
         ))
         txFundTokenAccount.add(spl.Token.createMintToInstruction(
             spl.TOKEN_PROGRAM_ID,
@@ -93,7 +83,7 @@ export const createUserAndAssociatedWallet = async (connection: anchor.web3.Conn
             [],
             1337000000,
         ));
-        const txFundTokenSig = await provider.sendAndConfirm(txFundTokenAccount);
+        const txFundTokenSig = await provider.sendAndConfirm(txFundTokenAccount, [user]);
         console.log(`[${userAssociatedTokenAccount.toBase58()}] New associated account for mint ${mint.toBase58()}: ${txFundTokenSig}`);
     }
     return userAssociatedTokenAccount;
@@ -130,7 +120,7 @@ export const createUserAndAssociatedWallet = async (connection: anchor.web3.Conn
     return tokenMint.publicKey;
   }
 
-  const readAccount = async (accountPublicKey: anchor.web3.PublicKey, provider: anchor.Provider): Promise<[spl.AccountInfo, string]> => {
+  export const readAccount = async (accountPublicKey: anchor.web3.PublicKey, provider: anchor.Provider): Promise<[spl.AccountInfo, string]> => {
     const tokenInfoLol = await provider.connection.getAccountInfo(accountPublicKey);
     const data = Buffer.from(tokenInfoLol.data);
     const accountInfo: spl.AccountInfo = spl.AccountLayout.decode(data);

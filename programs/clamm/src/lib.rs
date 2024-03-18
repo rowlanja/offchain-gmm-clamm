@@ -70,6 +70,7 @@ pub mod clamm {
         token_max_a: u64,
         token_max_b: u64,
     ) -> Result<()> {
+        msg!("Handling add liquidity");
         return instructions::add_liquidity::handler(
             ctx,
             liquidity_amount,

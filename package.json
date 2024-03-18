@@ -5,7 +5,9 @@
     },
     "dependencies": {
         "@coral-xyz/anchor": "^0.29.0",
-        "@solana/spl-token": "^0.1.6"
+        "@orca-so/common-sdk": "^0.5.1",
+        "@solana/spl-token": "^0.1.6",
+        "decimal.js": "^10.4.3"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.0",

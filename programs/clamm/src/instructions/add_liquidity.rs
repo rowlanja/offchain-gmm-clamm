@@ -16,25 +16,25 @@ pub struct ModifyLiquidity<'info> {
 
     pub position_authority: Signer<'info>,
 
-    #[account(address = token::ID)]
+    // #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
 
-    #[account(mut, has_one = pool)]
+    #[account(mut)]
     pub position: Account<'info, Position>,
 
-    #[account(mut, constraint = token_owner_account_a.mint == pool.token_mint_a)]
+    #[account(mut)]
     pub token_owner_account_a: Box<Account<'info, TokenAccount>>,
-    #[account(mut, constraint = token_owner_account_b.mint == pool.token_mint_b)]
+    #[account(mut)]
     pub token_owner_account_b: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut, constraint = token_vault_a.key() == pool.token_vault_a)]
+    #[account(mut)]
     pub token_vault_a: Box<Account<'info, TokenAccount>>,
-    #[account(mut, constraint = token_vault_b.key() == pool.token_vault_b)]
+    #[account(mut)]
     pub token_vault_b: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut, has_one = pool)]
+    #[account(mut)]
     pub tick_array_lower: AccountLoader<'info, TickArray>,
-    #[account(mut, has_one = pool)]
+    #[account(mut)]
     pub tick_array_upper: AccountLoader<'info, TickArray>,
 }
 
@@ -44,6 +44,7 @@ pub fn handler(
     token_max_a: u64,
     token_max_b: u64,
 ) -> Result<()> {
+    msg!("opening position");
     let clock = Clock::get()?;
 
     if liquidity_amount == 0 {
@@ -51,7 +52,7 @@ pub fn handler(
     }
     let liquidity_delta = convert_to_liquidity_delta(liquidity_amount, true)?;
     let timestamp = to_timestamp_u64(clock.unix_timestamp)?;
-
+    msg!("opening position [calculate_modify_liquidity]");
     let update = calculate_modify_liquidity(
         &ctx.accounts.pool,
         &ctx.accounts.position,
@@ -60,7 +61,7 @@ pub fn handler(
         liquidity_delta,
         timestamp,
     )?;
-
+    msg!("opening position [sync_modify_liquidity_values]");
     sync_modify_liquidity_values(
         &mut ctx.accounts.pool,
         &mut ctx.accounts.position,
@@ -69,7 +70,7 @@ pub fn handler(
         update,
         timestamp,
     )?;
-
+    msg!("opening position  [calculate_liquidity_token_deltas]");
     let (delta_a, delta_b) = calculate_liquidity_token_deltas(
         ctx.accounts.pool.tick_current_index,
         ctx.accounts.pool.sqrt_price,
@@ -82,7 +83,7 @@ pub fn handler(
     } else if delta_b > token_max_b {
         return Err(ErrorCode::TokenMaxExceeded.into());
     }
-
+    msg!("opening position [transfer_from_owner_to_vault]");
     transfer_from_owner_to_vault(
         &ctx.accounts.position_authority,
         &ctx.accounts.token_owner_account_a,
@@ -90,7 +91,7 @@ pub fn handler(
         &ctx.accounts.token_program,
         delta_a,
     )?;
-
+    msg!("opening position [transfer_from_owner_to_vault]");
     transfer_from_owner_to_vault(
         &ctx.accounts.position_authority,
         &ctx.accounts.token_owner_account_b,

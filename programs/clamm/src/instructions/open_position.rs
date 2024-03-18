@@ -37,6 +37,8 @@ pub fn handler(
     tick_lower_index: i32,
     tick_upper_index: i32,
 ) -> Result<()> {
+  msg!("handler for open position");
+
     let pool = &ctx.accounts.pool;
     let position = &mut ctx.accounts.position;
 

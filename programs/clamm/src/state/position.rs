@@ -56,10 +56,12 @@ impl Position {
         tick_lower_index: i32,
         tick_upper_index: i32
     ) -> Result<()> {
+        msg!("opening position start");
         self.pool = pool.key();
 
         self.tick_lower_index = tick_lower_index;
         self.tick_upper_index = tick_upper_index;
+        msg!("opening position done");
         Ok(())
     }
 
