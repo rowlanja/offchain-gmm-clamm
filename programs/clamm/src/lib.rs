@@ -78,4 +78,22 @@ pub mod clamm {
             token_max_b,
         );
     }
+
+    pub fn swap(
+        ctx: Context<Swap>,
+        amount: u64,
+        other_amount_threshold: u64,
+        sqrt_price_limit: u128,
+        amount_specified_is_input: bool,
+        a_to_b: bool,
+    ) -> Result<()> {
+        return instructions::swap::handler(
+            ctx,
+            amount,
+            other_amount_threshold,
+            sqrt_price_limit,
+            amount_specified_is_input,
+            a_to_b,
+        );
+    }
 }

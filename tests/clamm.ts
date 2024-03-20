@@ -18,6 +18,9 @@ describe("clamm", () => {
   const start_tick_idx = new anchor.BN(0);
   const end_tick_idx = new anchor.BN(10);
   const token_amount = new anchor.BN(100);
+  const swap_amount = new anchor.BN(1);
+  const swap_other_amount_threshold = new anchor.BN(0);
+  const sqrt_price_limit = new anchor.BN(429504801800)
   const token_max_a = new anchor.BN(5000000);
   const token_max_b = new anchor.BN(5000000);
   let tokenA: anchor.web3.PublicKey;
@@ -136,6 +139,28 @@ describe("clamm", () => {
     console.log("Pool token b balance", (await tokenUtils.readAccount(poolWalletTokenBPDA, provider))[1]);
     // || \\ Finished
 
-      console.log("FINISHED")
+    
+    // || \\ Finished
+    console.log("Time to swap [Part 6]");
+
+    await program.methods
+      .swap(swap_amount, swap_other_amount_threshold, sqrt_price_limit, true, false)
+      .accounts({
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+        tokenAuthority: alice.publicKey,
+        pool: poolPDA,
+        tokenOwnerAccountA: aliceTokenAWallet,
+        tokenOwnerAccountB: aliceTokenBWallet,
+        tokenVaultA: poolWalletTokenAPDA,
+        tokenVaultB: poolWalletTokenBPDA,
+        tickArray0: ticketArrayPDA,
+        tickArray1: ticketArrayPDA,
+        tickArray2: ticketArrayPDA,
+      })
+      .signers([alice])
+      .rpc();
+  
+    
+    console.log("FINISHED")
   })
 });

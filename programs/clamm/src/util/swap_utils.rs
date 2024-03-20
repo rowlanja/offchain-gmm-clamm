@@ -5,7 +5,7 @@ use crate::{manager::swap_manager::PostSwapUpdate, state::Pool};
 
 use super::{transfer_from_owner_to_vault, transfer_from_vault_to_owner};
 
-pub fn update_and_swap_whirlpool<'info>(
+pub fn update_and_swap_pool<'info>(
     whirlpool: &mut Account<'info, Pool>,
     token_authority: &Signer<'info>,
     token_owner_account_a: &Account<'info, TokenAccount>,
