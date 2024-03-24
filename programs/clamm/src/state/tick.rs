@@ -181,7 +181,7 @@ impl TickArray {
         a_to_b: bool,
     ) -> Result<Option<i32>> {
         if !self.in_search_range(tick_index, tick_spacing, !a_to_b) {
-            return Err(ErrorCode::InvalidTickArraySequence.into());
+            return Err(ErrorCode::CustomInvalidTickArraySequence.into());
         }
 
         let mut curr_offset = match self.tick_offset(tick_index, tick_spacing) {
@@ -304,7 +304,9 @@ impl TickArray {
             lower = lower - tick_spacing as i32;
             upper = upper - tick_spacing as i32;
         }
+        msg!("{} {} {}", lower, tick_index, upper);
         tick_index >= lower && tick_index < upper
+
     }
 
     pub fn check_in_array_bounds(&self, tick_index: i32, tick_spacing: u16) -> bool {

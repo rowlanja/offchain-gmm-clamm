@@ -16,6 +16,7 @@ pub struct Pool {
 
     pub tick_spacing: u16,          // 2
     pub tick_spacing_seed: [u8; 2], // 2
+    pub pool_bump: [u8; 1],   // 1
 
     // Stored as hundredths of a basis point
     // u16::MAX corresponds to ~6.5%
@@ -53,11 +54,12 @@ pub struct Pool {
 }
 
 impl Pool {
-    pub const LEN: usize = 8 + 261 + 384;
+    pub const LEN: usize = 8 + 262 + 384;
 
     pub fn initialize(
         &mut self,
         whirlpools_config: &Account<PoolsConfig>,
+        bump: u8,
         tick_spacing: u16,
         sqrt_price: u128,
         default_fee_rate: u16,
@@ -75,7 +77,7 @@ impl Pool {
         }
 
         self.whirlpools_config = whirlpools_config.key();
-
+        self.pool_bump = [bump];
         self.tick_spacing = tick_spacing;
         self.tick_spacing_seed = self.tick_spacing.to_le_bytes();
 
@@ -173,13 +175,14 @@ impl Pool {
         self.protocol_fee_owed_b = 0;
     }
 
-    pub fn seeds(&self) -> [&[u8]; 5] {
+    pub fn seeds(&self) -> [&[u8]; 6] {
         [
-            &b"whirlpool"[..],
+            &b"pool"[..],
             self.whirlpools_config.as_ref(),
             self.token_mint_a.as_ref(),
             self.token_mint_b.as_ref(),
             self.tick_spacing_seed.as_ref(),
+            self.pool_bump.as_ref(),
         ]
     }
 
@@ -230,4 +233,9 @@ impl PoolRewardInfo {
         }
         reward_growths
     }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Copy)]
+pub struct PoolBumps {
+    pub pool_bump: u8,
 }

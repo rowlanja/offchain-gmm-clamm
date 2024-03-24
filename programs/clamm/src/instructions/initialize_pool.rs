@@ -4,6 +4,7 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount};
 use solana_program::{msg};
 
 #[derive(Accounts)]
+#[instruction(tick_spacing: u16)]
 pub struct InitializePool<'info> {
     pub whirlpools_config: Box<Account<'info, PoolsConfig>>,
     #[account(mut)]
@@ -13,21 +14,26 @@ pub struct InitializePool<'info> {
       init,
       payer = user,
       space = 800,
-      seeds = [b"pool-state".as_ref(), token_mint_a.key().as_ref(), token_mint_b.key().as_ref()],
+      // seeds = [b"pool-state".as_ref(), token_mint_a.key().as_ref(), token_mint_b.key().as_ref()],
+      seeds = [
+        b"pool".as_ref(),
+        whirlpools_config.key().as_ref(),
+        token_mint_a.key().as_ref(),
+        token_mint_b.key().as_ref(),
+        tick_spacing.to_le_bytes().as_ref()
+      ],
       bump
     )]
     pub pool_state: Box<Account<'info, Pool>>,
 
     #[account(init,
       payer = user,
-      seeds=[b"pool-wallet-token-a".as_ref(), token_mint_a.key().as_ref()], bump,
       token::mint = token_mint_a,
       token::authority = pool_state)]
     pub token_vault_a: Box<Account<'info, TokenAccount>>,
 
     #[account(init,
       payer = user,
-      seeds=[b"pool-wallet-token-b".as_ref(), token_mint_b.key().as_ref()], bump,
       token::mint = token_mint_b,
       token::authority = pool_state)]
     pub token_vault_b: Box<Account<'info, TokenAccount>>,
@@ -52,11 +58,12 @@ pub fn handler(
     let token_mint_b = ctx.accounts.token_mint_b.key();
     let whirlpools_config = &ctx.accounts.whirlpools_config;
     let default_fee_rate: u16 = 1;
-
+    let bump = *ctx.bumps.get("pool_state").unwrap();
     let pool = &mut ctx.accounts.pool_state;
 
     Ok(pool.initialize(
         whirlpools_config,
+        bump,
         tick_spacing,
         initial_sqrt_price,
         default_fee_rate,

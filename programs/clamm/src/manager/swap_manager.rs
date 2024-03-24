@@ -36,7 +36,7 @@ pub fn swap(
     if sqrt_price_limit < MIN_SQRT_PRICE_X64 || sqrt_price_limit > MAX_SQRT_PRICE_X64 {
         return Err(ErrorCode::SqrtPriceOutOfBounds.into());
     }
-
+    msg!("{} {} {} ", a_to_b, sqrt_price_limit, whirlpool.sqrt_price);
     if a_to_b && sqrt_price_limit > whirlpool.sqrt_price
         || !a_to_b && sqrt_price_limit < whirlpool.sqrt_price
     {

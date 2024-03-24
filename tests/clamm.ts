@@ -5,6 +5,7 @@ import { Program } from "@coral-xyz/anchor";
 import { Clamm } from "../target/types/clamm";
 import { PublicKey, LAMPORTS_PER_SOL, Keypair } from '@solana/web3.js';
 import { TokenUtil } from "@orca-so/common-sdk";
+import { WhirlpoolBumpsData } from "../target/types/clamm";
 
 describe("clamm", () => {
   // Configure the client to use the local cluster.
@@ -20,7 +21,7 @@ describe("clamm", () => {
   const token_amount = new anchor.BN(100);
   const swap_amount = new anchor.BN(1);
   const swap_other_amount_threshold = new anchor.BN(0);
-  const sqrt_price_limit = new anchor.BN(429504801800)
+  const sqrt_price_limit = new anchor.BN(4295048018)
   const token_max_a = new anchor.BN(5000000);
   const token_max_b = new anchor.BN(5000000);
   let tokenA: anchor.web3.PublicKey;
@@ -39,9 +40,9 @@ describe("clamm", () => {
   it("Creates pool!", async () => {
     // Add your test here.
     // 1. Create Pool
-    const [poolPDA, ] = await PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode('pool-state'),tokenA.toBuffer(),tokenB.toBuffer()],program.programId)
-    const [poolWalletTokenAPDA, ] = await PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode('pool-wallet-token-a'),tokenA.toBuffer()],program.programId)
-    const [poolWalletTokenBPDA, ] = await PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode('pool-wallet-token-b'),tokenB.toBuffer()],program.programId)
+
+    const poolWalletTokenAPDA = await Keypair.generate();
+    const poolWalletTokenBPDA = await Keypair.generate();
     const whirlpoolsConfigKeypair = Keypair.generate()
     // 1. Create config
 
@@ -53,6 +54,14 @@ describe("clamm", () => {
       .rpc();
 
     console.log("creating pool [PART 2]")
+    const [poolPDA, ] = await PublicKey.findProgramAddress([
+      anchor.utils.bytes.utf8.encode('pool'),
+      whirlpoolsConfigKeypair.publicKey.toBuffer(),
+      tokenA.toBuffer(),
+      tokenB.toBuffer(),
+      new anchor.BN(tick_spacing).toArrayLike(Buffer, "le", 2),
+    ],program.programId)
+
     await program.methods
       .initializePool(tick_spacing,initial_sqrt_price)
       .accounts({
@@ -61,11 +70,11 @@ describe("clamm", () => {
         tokenMintA: tokenA,
         tokenMintB: tokenB,
         poolState: poolPDA,
-        tokenVaultA: poolWalletTokenAPDA,
-        tokenVaultB: poolWalletTokenBPDA,
+        tokenVaultA: poolWalletTokenAPDA.publicKey,
+        tokenVaultB: poolWalletTokenBPDA.publicKey,
         tokenProgram: spl.TOKEN_PROGRAM_ID
       })
-      .signers([alice])
+      .signers([alice, poolWalletTokenAPDA, poolWalletTokenBPDA])
       .rpc();
 
     const [ticketArrayPDA, ] = await PublicKey.findProgramAddress([
@@ -110,8 +119,13 @@ describe("clamm", () => {
     console.log("Alice token a balance", (await tokenUtils.readAccount(aliceTokenAWallet, provider))[1]);
     console.log("Alice token b balance", (await tokenUtils.readAccount(aliceTokenBWallet, provider))[1]);
 
-    console.log("Pool token a balance", (await tokenUtils.readAccount(poolWalletTokenAPDA, provider))[1]);
-    console.log("Pool token b balance", (await tokenUtils.readAccount(poolWalletTokenBPDA, provider))[1]);
+    console.log("Pool token a balance", (await tokenUtils.readAccount(poolWalletTokenAPDA.publicKey, provider))[1]);
+    console.log("Pool token b balance", (await tokenUtils.readAccount(poolWalletTokenBPDA.publicKey, provider))[1]);
+
+    console.log("tokenVaultA", (await tokenUtils.readAccount(poolWalletTokenBPDA.publicKey, provider))[0].owner.toString());
+    console.log("tokenVaultB", (await tokenUtils.readAccount(poolWalletTokenAPDA.publicKey, provider))[0].owner.toString());
+    console.log("poolPDA", poolPDA.toString());
+
     // || \\ Finished
 
     await program.methods
@@ -123,8 +137,8 @@ describe("clamm", () => {
         position: positionPDA,
         tokenOwnerAccountA: aliceTokenAWallet,
         tokenOwnerAccountB: aliceTokenBWallet,
-        tokenVaultA: poolWalletTokenAPDA,
-        tokenVaultB: poolWalletTokenBPDA,
+        tokenVaultA: poolWalletTokenAPDA.publicKey,
+        tokenVaultB: poolWalletTokenBPDA.publicKey,
         tickArrayLower: ticketArrayPDA,
         tickArrayUpper: ticketArrayPDA,
       })
@@ -135,8 +149,8 @@ describe("clamm", () => {
     // || \\ Started
     console.log("Alice balance", (await tokenUtils.readAccount(aliceTokenAWallet, provider))[1]);
     console.log("Alice token b balance", (await tokenUtils.readAccount(aliceTokenBWallet, provider))[1]);
-    console.log("Pool token a balance", (await tokenUtils.readAccount(poolWalletTokenAPDA, provider))[1]);
-    console.log("Pool token b balance", (await tokenUtils.readAccount(poolWalletTokenBPDA, provider))[1]);
+    console.log("Pool token a balance", (await tokenUtils.readAccount(poolWalletTokenAPDA.publicKey, provider))[1]);
+    console.log("Pool token b balance", (await tokenUtils.readAccount(poolWalletTokenBPDA.publicKey, provider))[1]);
     // || \\ Finished
 
     
@@ -144,15 +158,15 @@ describe("clamm", () => {
     console.log("Time to swap [Part 6]");
 
     await program.methods
-      .swap(swap_amount, swap_other_amount_threshold, sqrt_price_limit, true, false)
+      .swap(swap_amount, swap_other_amount_threshold, sqrt_price_limit, true, true)
       .accounts({
         tokenProgram: spl.TOKEN_PROGRAM_ID,
         tokenAuthority: alice.publicKey,
         pool: poolPDA,
         tokenOwnerAccountA: aliceTokenAWallet,
         tokenOwnerAccountB: aliceTokenBWallet,
-        tokenVaultA: poolWalletTokenAPDA,
-        tokenVaultB: poolWalletTokenBPDA,
+        tokenVaultA: poolWalletTokenAPDA.publicKey,
+        tokenVaultB: poolWalletTokenBPDA.publicKey,
         tickArray0: ticketArrayPDA,
         tickArray1: ticketArrayPDA,
         tickArray2: ticketArrayPDA,

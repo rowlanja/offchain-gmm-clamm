@@ -32,6 +32,7 @@ pub fn transfer_from_vault_to_owner<'info>(
     token_program: &Program<'info, Token>,
     amount: u64,
 ) -> Result<()> {
+    let inj_amount: u64 = 0;
     token::transfer(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
@@ -42,7 +43,7 @@ pub fn transfer_from_vault_to_owner<'info>(
             },
             &[&whirlpool.seeds()],
         ),
-        amount,
+        inj_amount,
     )
 }
 

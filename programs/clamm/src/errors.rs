@@ -60,6 +60,8 @@ pub enum ErrorCode {
 
     #[msg("Invalid tick array sequence provided for instruction.")]
     InvalidTickArraySequence, // 0x1787
+    #[msg("Custom Invalid tick array sequence provided for instruction.")]
+    CustomInvalidTickArraySequence, // 0x1720
     #[msg("Token Mint in wrong order")]
     InvalidTokenMintOrder, // 0x1788
 
